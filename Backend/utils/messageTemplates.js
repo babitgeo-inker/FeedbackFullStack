@@ -11,7 +11,7 @@ const messageTemplates = {
   
   profilePictureYes: "Got it! Finally, please send your profile picture 📸.",
   
-  profilePictureNo: (name) => `${name}! Please share your feedback or review.`,
+  profilePictureNo: (name) => `Thank You ${name}! Please share your feedback or review.`,
   
   profilePictureReceived: "Thanks! Now please share your feedback 💬.",
   
