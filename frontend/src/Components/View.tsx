@@ -50,6 +50,30 @@ const ProfileBubble: React.FC<ProfileBubbleProps> = ({ position, photoUrl, size,
   const [hovered, setHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   
+  // Generate random light border color based on index for consistency
+  const generateLightColor = (seed: number): string => {
+    const colors = [
+      '#FFB3BA', // Light Pink
+      '#BAFFC9', // Light Green
+      '#BAE1FF', // Light Blue
+      '#FFFFBA', // Light Yellow
+      '#FFDFBA', // Light Orange
+      '#E0BBE4', // Light Purple
+      '#FFB3E6', // Light Magenta
+      '#B3FFB3', // Light Lime
+      '#FFE5B3', // Light Peach
+      '#B3E5FF', // Light Sky Blue
+      '#D4B3FF', // Light Lavender
+      '#FFB3D4', // Light Rose
+      '#B3FFD4', // Light Mint
+      '#FFD4B3', // Light Coral
+      '#C9B3FF', // Light Violet
+    ];
+    return colors[seed % colors.length];
+  };
+  
+  const borderColor = isCentral ? '#fff' : generateLightColor(index);
+  
   // Calculate sizes based on bubble size - profile picture, name, and feedback
   const profilePicSize = isCentral ? size * 0.45 : size * 0.5; // Reduced to make room for name
   const nameHeight = isCentral ? 20 : 16; // Space for name display
@@ -71,7 +95,7 @@ const ProfileBubble: React.FC<ProfileBubbleProps> = ({ position, photoUrl, size,
         boxShadow: isCentral 
           ? '0 20px 60px rgba(0,0,0,0.3), 0 0 0 8px rgba(255,255,255,0.9)' 
           : '0 10px 30px rgba(0,0,0,0.2), 0 0 0 4px rgba(255,255,255,0.7)',
-        border: isCentral ? '6px solid #fff' : '3px solid #fff',
+        border: isCentral ? `6px solid ${borderColor}` : `3px solid ${borderColor}`,
         zIndex: isCentral ? 1000 : 100 + index,
         animation: `float-${index % 3} 3s ease-in-out infinite`,
         background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
@@ -94,7 +118,7 @@ const ProfileBubble: React.FC<ProfileBubbleProps> = ({ position, photoUrl, size,
           overflow: 'hidden',
           marginBottom: isCentral ? '6px' : '4px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          border: '2px solid rgba(255,255,255,0.8)',
+          border: `2px solid ${borderColor}`,
         }}
       >
         <img
@@ -296,14 +320,13 @@ const ProfileGallery: React.FC<ProfileGalleryProps> = ({ onBubbleCountChange, fe
   const bubblePositions = React.useMemo(() => {
     if (containerSize.width === 0 || feedbackData.length === 0) return [];
 
-    const positions: Array<{ x: number; y: number }> = [];
     const centerX = containerSize.width / 2;
     const centerY = containerSize.height / 2;
     
     // Use only actual feedback data count
     const totalBubbles = feedbackData.length;
     
-    if (totalBubbles === 0) return positions;
+    if (totalBubbles === 0) return [];
 
     // Create positions array with center position at index 0
     const tempPositions: Array<{ x: number; y: number }> = [];
@@ -311,55 +334,170 @@ const ProfileGallery: React.FC<ProfileGalleryProps> = ({ onBubbleCountChange, fe
     // Index 0 (first feedback) goes to center
     tempPositions.push({ x: centerX, y: centerY });
     
+    // Helper function to check if a position overlaps with existing bubbles
+    const isPositionValid = (x: number, y: number, minDistance: number): boolean => {
+      // Check bounds
+      const margin = 70;
+      if (x < margin || x > containerSize.width - margin || 
+          y < margin || y > containerSize.height - margin) {
+        return false;
+      }
+      
+      // Check distance from all existing bubbles
+      for (const existingPos of tempPositions) {
+        const distance = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
+        if (distance < minDistance) {
+          return false;
+        }
+      }
+      return true;
+    };
+    
     if (totalBubbles > 1) {
-      // Arrange remaining bubbles (index 1 onwards) in concentric circles
-      const maxRadius = Math.min(containerSize.width, containerSize.height) * 0.4;
+      // STRUCTURED RING SYSTEM with collision detection
+      const MIN_BUBBLE_DISTANCE = 110; // Minimum distance between any two bubbles
+      const RING_RADIUS_INCREMENT = 130; // Distance between rings
+      
+      // Calculate central bubble size
+      const screenSizeMultiplier = Math.min(containerSize.width / 1000, 1.8);
+      const centralBubbleSize = Math.floor(250 * screenSizeMultiplier);
+      const centralRadius = centralBubbleSize / 2;
+      
       const remainingBubbles = totalBubbles - 1;
       let bubblesPlaced = 0;
-      let currentRadius = maxRadius * 0.3;
       
-      while (bubblesPlaced < remainingBubbles) {
-        const bubblesInThisCircle = Math.min(
-          Math.floor(2 * Math.PI * currentRadius / 120), // Space bubbles 120px apart
-          remainingBubbles - bubblesPlaced
-        );
+      // RING 1: Exactly 5 bubbles around center
+      if (bubblesPlaced < remainingBubbles) {
+        const ring1Radius = centralRadius + MIN_BUBBLE_DISTANCE;
+        const ring1Count = Math.min(5, remainingBubbles - bubblesPlaced);
         
-        for (let i = 0; i < bubblesInThisCircle && bubblesPlaced < remainingBubbles; i++) {
-          const angle = (i / bubblesInThisCircle) * Math.PI * 2;
-          const x = centerX + Math.cos(angle) * currentRadius;
-          const y = centerY + Math.sin(angle) * currentRadius;
+        for (let i = 0; i < ring1Count; i++) {
+          const angle = (i / 5) * Math.PI * 2; // Always divide by 5 for even spacing
+          const x = centerX + Math.cos(angle) * ring1Radius;
+          const y = centerY + Math.sin(angle) * ring1Radius;
           
-          // Ensure bubble is within screen bounds
-          const margin = 60;
-          if (x > margin && x < containerSize.width - margin && 
-              y > margin && y < containerSize.height - margin) {
+          if (isPositionValid(x, y, MIN_BUBBLE_DISTANCE)) {
             tempPositions.push({ x, y });
             bubblesPlaced++;
           }
         }
-        
-        currentRadius += 150; // Move to next circle
-        if (currentRadius > maxRadius) break;
       }
       
-      // If we still have bubbles to place, scatter them randomly
-      while (bubblesPlaced < remainingBubbles) {
-        const x = Math.random() * (containerSize.width - 120) + 60;
-        const y = Math.random() * (containerSize.height - 120) + 60;
+      // RING 2: Exactly 10 bubbles (double the first ring)
+      if (bubblesPlaced < remainingBubbles) {
+        const ring2Radius = centralRadius + MIN_BUBBLE_DISTANCE + RING_RADIUS_INCREMENT;
+        const ring2Count = Math.min(10, remainingBubbles - bubblesPlaced);
         
-        // Ensure minimum distance from center
-        const distanceFromCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-        if (distanceFromCenter > 80) {
+        for (let i = 0; i < ring2Count; i++) {
+          // Offset by half angle for better distribution between ring 1 bubbles
+          const angleOffset = Math.PI / 10; // Half of the angular spacing
+          const angle = (i / 10) * Math.PI * 2 + angleOffset;
+          const x = centerX + Math.cos(angle) * ring2Radius;
+          const y = centerY + Math.sin(angle) * ring2Radius;
+          
+          if (isPositionValid(x, y, MIN_BUBBLE_DISTANCE)) {
+            tempPositions.push({ x, y });
+            bubblesPlaced++;
+          }
+        }
+      }
+      
+      // RING 3: 15 bubbles (1.5x the second ring)
+      if (bubblesPlaced < remainingBubbles) {
+        const ring3Radius = centralRadius + MIN_BUBBLE_DISTANCE + (RING_RADIUS_INCREMENT * 2);
+        const ring3Count = Math.min(15, remainingBubbles - bubblesPlaced);
+        
+        for (let i = 0; i < ring3Count; i++) {
+          const angle = (i / 15) * Math.PI * 2;
+          const x = centerX + Math.cos(angle) * ring3Radius;
+          const y = centerY + Math.sin(angle) * ring3Radius;
+          
+          if (isPositionValid(x, y, MIN_BUBBLE_DISTANCE)) {
+            tempPositions.push({ x, y });
+            bubblesPlaced++;
+          }
+        }
+      }
+      
+      // RING 4: 20 bubbles (2x the second ring)
+      if (bubblesPlaced < remainingBubbles) {
+        const ring4Radius = centralRadius + MIN_BUBBLE_DISTANCE + (RING_RADIUS_INCREMENT * 3);
+        const ring4Count = Math.min(20, remainingBubbles - bubblesPlaced);
+        
+        for (let i = 0; i < ring4Count; i++) {
+          // Slight offset for better visual distribution
+          const angleOffset = Math.PI / 20;
+          const angle = (i / 20) * Math.PI * 2 + angleOffset;
+          const x = centerX + Math.cos(angle) * ring4Radius;
+          const y = centerY + Math.sin(angle) * ring4Radius;
+          
+          if (isPositionValid(x, y, MIN_BUBBLE_DISTANCE)) {
+            tempPositions.push({ x, y });
+            bubblesPlaced++;
+          }
+        }
+      }
+      
+      // Additional rings with collision detection
+      let currentRingNumber = 5;
+      let currentRadius = centralRadius + MIN_BUBBLE_DISTANCE + (RING_RADIUS_INCREMENT * 4);
+      
+      while (bubblesPlaced < remainingBubbles) {
+        // Calculate bubbles for this ring (increasing pattern)
+        const bubblesInRing = Math.min(
+          currentRingNumber * 5, // 25, 30, 35, etc.
+          remainingBubbles - bubblesPlaced
+        );
+        
+        if (bubblesInRing === 0) break;
+        
+        let placedInThisRing = 0;
+        for (let i = 0; i < bubblesInRing && bubblesPlaced < remainingBubbles; i++) {
+          const angleOffset = (currentRingNumber % 2) * (Math.PI / bubblesInRing);
+          const angle = (i / bubblesInRing) * Math.PI * 2 + angleOffset;
+          const x = centerX + Math.cos(angle) * currentRadius;
+          const y = centerY + Math.sin(angle) * currentRadius;
+          
+          if (isPositionValid(x, y, MIN_BUBBLE_DISTANCE)) {
+            tempPositions.push({ x, y });
+            bubblesPlaced++;
+            placedInThisRing++;
+          }
+        }
+        
+        // If we couldn't place any bubbles in this ring, try with larger radius
+        if (placedInThisRing === 0) {
+          currentRadius += RING_RADIUS_INCREMENT * 0.5; // Smaller increment for fine-tuning
+        } else {
+          currentRadius += RING_RADIUS_INCREMENT;
+          currentRingNumber++;
+        }
+        
+        // Safety check to prevent infinite loops
+        const maxAllowedRadius = Math.min(containerSize.width, containerSize.height) * 0.4;
+        if (currentRadius > maxAllowedRadius) {
+          break;
+        }
+      }
+      
+      // Final fallback: place remaining bubbles with strict collision detection
+      let attempts = 0;
+      while (bubblesPlaced < remainingBubbles && attempts < 100) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * (Math.min(containerSize.width, containerSize.height) * 0.35) + (centralRadius + MIN_BUBBLE_DISTANCE);
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        if (isPositionValid(x, y, MIN_BUBBLE_DISTANCE)) {
           tempPositions.push({ x, y });
           bubblesPlaced++;
         }
+        attempts++;
       }
     }
     
     // Return positions array where index 0 is center
     return tempPositions;
-    
-    return positions;
   }, [containerSize, feedbackData]);
 
   // Update bubble count when positions change
