@@ -104,6 +104,12 @@ app.use('/webhook', webhookRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
+// Server-Sent Events endpoint for real-time updates
+const sseService = require('./services/sseService');
+app.get('/api/events', (req, res) => {
+  sseService.addClient(res);
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({

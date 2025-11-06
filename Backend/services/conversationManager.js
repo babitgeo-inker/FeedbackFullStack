@@ -131,7 +131,11 @@ class ConversationStateManager {
       sessionDuration
     };
     
-    await prismaService.saveFeedback(feedbackData);
+    const savedFeedback = await prismaService.saveFeedback(feedbackData);
+    
+    // Notify SSE clients about new feedback
+    const sseService = require('./sseService');
+    sseService.notifyNewFeedback(savedFeedback);
     
     // Trigger image limit cleanup if this feedback has an image
     if (session.profileImageUrl) {
