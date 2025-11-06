@@ -295,12 +295,11 @@ const NetworkLines: React.FC<NetworkLinesProps> = ({ bubblePositions }) => {
 };
 
 interface ProfileGalleryProps {
-  onBubbleCountChange: (count: number) => void;
   feedbackData: FeedbackData[];
   isLoading: boolean;
 }
 
-const ProfileGallery: React.FC<ProfileGalleryProps> = ({ onBubbleCountChange, feedbackData, isLoading }) => {
+const ProfileGallery: React.FC<ProfileGalleryProps> = ({ feedbackData, isLoading }) => {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -500,10 +499,7 @@ const ProfileGallery: React.FC<ProfileGalleryProps> = ({ onBubbleCountChange, fe
     return tempPositions;
   }, [containerSize, feedbackData]);
 
-  // Update bubble count when positions change
-  React.useEffect(() => {
-    onBubbleCountChange(bubblePositions.length);
-  }, [bubblePositions.length, onBubbleCountChange]);
+  // Bubble positions are calculated and used for rendering
 
   // Show loading state
   if (isLoading) {
@@ -574,7 +570,6 @@ const ProfileGallery: React.FC<ProfileGalleryProps> = ({ onBubbleCountChange, fe
 };
 
 const View: React.FC = () => {
-  const [bubbleCount, setBubbleCount] = useState(0);
   const [feedbackData, setFeedbackData] = useState<FeedbackData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -630,7 +625,6 @@ const View: React.FC = () => {
         
         
         <ProfileGallery 
-          onBubbleCountChange={setBubbleCount} 
           feedbackData={feedbackData}
           isLoading={isLoading}
         />
