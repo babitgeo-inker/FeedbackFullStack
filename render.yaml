@@ -1,0 +1,151 @@
+# Render Blueprint for WhatsApp Feedback Collection System
+# Combined Frontend (React+Vite) + Backend (Node.js+Express) Deployment
+# Optimized for Free Tier (512MB RAM)
+
+services:
+  # Combined Full-Stack Web Service
+  - type: web
+    name: whatsapp-feedback-fullstack
+    runtime: docker
+    plan: free
+    region: oregon  # Choose: oregon, frankfurt, singapore, ohio
+    branch: main
+    dockerfilePath: ./Dockerfile
+    
+    # Auto-deploy on push
+    autoDeploy: true
+    
+    # Health check configuration
+    healthCheckPath: /health
+    
+    # Environment Variables
+    envVars:
+      # ============================================
+      # Server Configuration
+      # ============================================
+      - key: NODE_ENV
+        value: production
+      
+      - key: PORT
+        value: 8080
+      
+      - key: HOST
+        value: 0.0.0.0
+      
+      # ============================================
+      # Database Configuration (Supabase PostgreSQL)
+      # ============================================
+      # Connection pooling URL (for application queries)
+      - key: DATABASE_URL
+        sync: false  # Set in Render dashboard
+        # Example: postgresql://postgres.xxx:password@aws-0-region.pooler.supabase.com:6543/postgres?pgbouncer=true
+      
+      # Direct connection URL (for migrations)
+      - key: DIRECT_URL
+        sync: false  # Set in Render dashboard
+        # Example: postgresql://postgres.xxx:password@aws-0-region.pooler.supabase.com:5432/postgres
+      
+      # ============================================
+      # WhatsApp Business API Configuration
+      # ============================================
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false  # Set in Render dashboard
+        # Get from: Meta Business Suite → WhatsApp → API Setup
+        # Note: Token expires, needs refresh
+      
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false  # Set in Render dashboard
+        # Example: 858942320634833
+      
+      - key: WHATSAPP_BUSINESS_ACCOUNT_ID
+        sync: false  # Set in Render dashboard
+        # Example: 24993453370318105
+      
+      - key: WHATSAPP_API_VERSION
+        value: v22.0
+        # WhatsApp API version (update as needed)
+      
+      - key: WHATSAPP_BUSINESS_NUMBER
+        sync: false  # Set in Render dashboard
+        # Example: +917034804662
+      
+      # ============================================
+      # Supabase Configuration
+      # ============================================
+      - key: SUPABASE_URL
+        sync: false  # Set in Render dashboard
+        # Example: https://xxx.supabase.co
+        # Get from: Supabase Dashboard → Settings → API
+      
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false  # Set in Render dashboard
+        # Get from: Supabase Dashboard → Settings → API → service_role key
+        # WARNING: Keep this secret! Has full database access
+      
+      - key: SUPABASE_ANON_KEY
+        sync: false  # Set in Render dashboard
+        # Get from: Supabase Dashboard → Settings → API → anon key
+        # Public key for client-side operations
+      
+      # ============================================
+      # Webhook Configuration
+      # ============================================
+      - key: WEBHOOK_VERIFY_TOKEN
+        sync: false  # Set in Render dashboard
+        # Custom token for WhatsApp webhook verification
+        # Use a strong random string
+      
+      # ============================================
+      # CORS Configuration
+      # ============================================
+      # Frontend URL for CORS (same as service URL since combined)
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: whatsapp-feedback-fullstack
+          property: host
+        # This will automatically use: https://whatsapp-feedback-fullstack.onrender.com
+
+# ============================================
+# Database Configuration
+# ============================================
+# Note: Using Supabase for PostgreSQL database
+# No additional Render database service needed
+# Supabase provides:
+# - PostgreSQL database
+# - Connection pooling (pgbouncer)
+# - Storage for images
+# - Real-time subscriptions
+# - Row-level security
+
+# ============================================
+# Deployment Notes
+# ============================================
+# 1. Push code to GitHub
+# 2. Connect repository in Render dashboard
+# 3. Render will detect this render.yaml
+# 4. Set all environment variables marked with "sync: false"
+# 5. Deploy will start automatically
+# 6. After deployment, configure WhatsApp webhook URL:
+#    https://your-service.onrender.com/webhook
+# 7. Run database migrations via Render Shell:
+#    npx prisma migrate deploy
+
+# ============================================
+# Free Tier Limitations
+# ============================================
+# - 512MB RAM
+# - Sleeps after 15 minutes of inactivity
+# - Cold start: 10-30 seconds
+# - 750 hours/month free
+# - Automatic SSL certificate
+# - Custom domain support
+
+# ============================================
+# Monitoring & Maintenance
+# ============================================
+# - Health check: https://your-service.onrender.com/health
+# - Logs: Available in Render dashboard
+# - Metrics: CPU, Memory, Response time
+# - Alerts: Configure in Render dashboard
+# - Keep warm: Use external monitoring (UptimeRobot)

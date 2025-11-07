@@ -110,19 +110,38 @@ app.get('/api/events', (req, res) => {
   sseService.addClient(res);
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
+// Serve static files from public directory (frontend build)
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'public')));
+
+// API status endpoint
+app.get('/api', (req, res) => {
   res.json({
-    message: 'WhatsApp Feedback Collection Server is running!',
+    message: 'WhatsApp Feedback Collection API is running!',
     version: require('./package.json').version,
     endpoints: {
       webhook: '/webhook',
       whatsapp: '/api/whatsapp',
       feedback: '/api/feedback',
-      health: '/health'
+      health: '/health',
+      events: '/api/events'
     },
     description: 'WhatsApp Business API backend for collecting user feedback through conversation flow'
   });
+});
+
+// Serve frontend for all non-API routes (SPA routing)
+app.get('*', (req, res) => {
+  // Don't serve frontend for API routes
+  if (req.path.startsWith('/api') || req.path.startsWith('/webhook')) {
+    return res.status(404).json({
+      error: 'API endpoint not found',
+      message: `Route ${req.method} ${req.originalUrl} not found`
+    });
+  }
+  
+  // Serve frontend index.html for all other routes
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handling middleware
