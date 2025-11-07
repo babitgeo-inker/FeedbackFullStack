@@ -9,7 +9,7 @@ const messageTemplates = {
   
   nameReceived: (name) => `Nice to meet you, ${name}! Are you ready to share your profile picture? (Yes/No)`,
   
-  profilePictureYes: "Got it! Finally, please send your profile picture 📸.",
+  profilePictureYes: "Got it! Finally, please send your Selfie 📸.",
   
   profilePictureNo: (name) => `Thank You ${name}! Please share your feedback or review.`,
   

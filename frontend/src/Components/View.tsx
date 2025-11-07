@@ -75,8 +75,8 @@ const ProfileBubble: React.FC<ProfileBubbleProps> = ({ position, photoUrl, size,
   const borderColor = isCentral ? '#fff' : generateLightColor(index);
   
   // Calculate sizes based on bubble size - profile picture, name, and feedback
-  const profilePicSize = isCentral ? size * 0.45 : size * 0.5; // Reduced to make room for name
-  const nameHeight = isCentral ? 20 : 16; // Space for name display
+  const profilePicSize = isCentral ? size * 0.45 : size * 0.5; // Increased center bubble profile size
+  const nameHeight = isCentral ? 20 : 16; // Increased space for center bubble name
   const remainingSpace = size - profilePicSize - nameHeight - (isCentral ? 20 : 16); // Padding
   const feedbackHeight = Math.max(remainingSpace, isCentral ? 24 : 20); // Minimum height for feedback
 
@@ -165,8 +165,8 @@ const ProfileBubble: React.FC<ProfileBubbleProps> = ({ position, photoUrl, size,
       >
         <span
           style={{
-            fontSize: isCentral ? '12px' : size > 80 ? '10px' : '8px',
-            fontWeight: '700',
+            fontSize: isCentral ? '25px' : size > 80 ? '10px' : '8px',
+            fontWeight: '900',
             color: '#2563eb', // Blue color to match the theme
             lineHeight: '1.1',
             textShadow: '0 1px 2px rgba(255,255,255,0.9)',
@@ -181,7 +181,7 @@ const ProfileBubble: React.FC<ProfileBubbleProps> = ({ position, photoUrl, size,
       </div>
 
       {/* Feedback Text Section */}
-      <div
+      <div className='w-[50%] h-[20%] '
         style={{
           height: `${feedbackHeight}px`,
           display: 'flex',
@@ -573,7 +573,7 @@ const View: React.FC = () => {
   const [feedbackData, setFeedbackData] = useState<FeedbackData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load feedback data from API with auto-refresh every 30 seconds
+  // Load feedback data from API with real-time updates via SSE
   useEffect(() => {
     const loadFeedbackData = async () => {
       try {
@@ -589,13 +589,45 @@ const View: React.FC = () => {
     // Load data immediately
     loadFeedbackData();
 
-    // Set up auto-refresh every 30 seconds
-    const refreshInterval = setInterval(() => {
-      loadFeedbackData();
-    }, 30000); // 30 seconds
+    // Set up Server-Sent Events for real-time updates
+    const eventSource = new EventSource(`${API_BASE_URL.replace('/api', '')}/api/events`);
+    
+    eventSource.onopen = () => {
+      console.log('🔗 Connected to real-time feedback updates');
+    };
 
-    // Cleanup interval on component unmount
-    return () => clearInterval(refreshInterval);
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('📡 Received real-time update:', data);
+        
+        if (data.type === 'new_feedback' || data.type === 'feedback_updated') {
+          // Refresh feedback data when new feedback is received
+          loadFeedbackData();
+        }
+      } catch (error) {
+        console.error('Error parsing SSE data:', error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error);
+      // Fallback to periodic refresh if SSE fails
+      setTimeout(() => {
+        loadFeedbackData();
+      }, 5000);
+    };
+
+    // Fallback refresh every 60 seconds (reduced frequency since we have real-time updates)
+    const fallbackInterval = setInterval(() => {
+      loadFeedbackData();
+    }, 60000); // 60 seconds
+
+    // Cleanup on component unmount
+    return () => {
+      eventSource.close();
+      clearInterval(fallbackInterval);
+    };
   }, []);
 
   return (
@@ -641,7 +673,7 @@ const View: React.FC = () => {
           borderRadius: '8px',
           backdropFilter: 'blur(10px)'
         }}>
-          Hover over profiles to interact • {feedbackData.length} feedback entries • Auto-refreshes every 30s
+          Hover over profiles to interact • {feedbackData.length} feedback entries • Real-time updates
         </div>
       </div>
     </>
