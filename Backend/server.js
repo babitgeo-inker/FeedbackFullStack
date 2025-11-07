@@ -150,8 +150,10 @@ app.use('*', (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3001;
-const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+const PORT = process.env.PORT || 8080;
+// Always bind to 0.0.0.0 in production or when PORT is set by platform (Render, Railway, etc.)
+// This allows external connections
+const HOST = process.env.HOST || (process.env.PORT ? '0.0.0.0' : 'localhost');
 
 app.listen(PORT, HOST, () => {
   console.log(`🚀 WhatsApp Webhook Server running on http://${HOST}:${PORT}`);
@@ -162,6 +164,7 @@ app.listen(PORT, HOST, () => {
   logConfiguration();
   
   console.log('✅ Server is ready to accept requests');
+  console.log(`🔌 Binding to: ${HOST}:${PORT} (accessible externally: ${HOST === '0.0.0.0' ? 'YES' : 'NO'})`);
 });
 
 module.exports = app;
