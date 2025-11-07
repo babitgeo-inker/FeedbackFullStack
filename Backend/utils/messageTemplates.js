@@ -7,7 +7,7 @@ const messageTemplates = {
   // Main conversation flow messages
   greeting: "👋 Hello! Thanks for contacting us. May I know your name?",
   
-  nameReceived: (name) => `Nice to meet you, ${name}! Are you ready to share your profile picture? (Yes/No)`,
+  nameReceived: (name) => `Nice to meet you, ${name}! Are you ready to share your selfie? (Yes/No)`,
   
   profilePictureYes: "Got it! Finally, please send your Selfie 📸.",
   
@@ -20,7 +20,7 @@ const messageTemplates = {
   // Error messages for wrong input types
   needText: "Please send a text message.",
   
-  needImage: "Please send an image for your profile picture 📸",
+  needImage: "Please send an image for your selfie 📸",
   
   // System messages
   sessionExpired: "Your session has expired. Let's start fresh! 👋 Hello! Thanks for contacting us. May I know your name?",
