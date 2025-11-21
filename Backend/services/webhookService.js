@@ -164,7 +164,7 @@ async function handleYesNoChoice(message, userPhone, session) {
       { id: 'yes', title: 'Yes' },
       { id: 'no', title: 'No' }
     ];
-    await sendButtonMessage(userPhone, messageText, buttons);
+    await sendButtonMessage(userPhone);
   }
 }
 
