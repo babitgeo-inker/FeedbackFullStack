@@ -38,6 +38,25 @@ class ConversationStateManager {
   }
 
   /**
+   * Get existing session WITHOUT creating a new one
+   * Used to check if user has an active session before processing messages
+   * @param {string} userPhone - User's phone number
+   * @returns {object|null} Session data or null if no active session exists
+   */
+  async getSessionIfExists(userPhone) {
+    let session = await prismaService.getConversationSession(userPhone);
+    
+    // Check if session exists and is not expired
+    if (session && this.isSessionExpired(session)) {
+      console.log(`⏰ Session expired for ${userPhone}`);
+      await prismaService.deleteConversationSession(userPhone);
+      return null;
+    }
+    
+    return session; // Returns null if no session exists
+  }
+
+  /**
    * Get existing session or create new one
    * @param {string} userPhone - User's phone number
    * @returns {object} Session data

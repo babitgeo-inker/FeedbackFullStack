@@ -39,22 +39,28 @@ async function handleIncomingMessage(message) {
     console.log(`📱 Processing message from ${message.from}:`, message);
 
     const userPhone = message.from;
+    const messageText = message.type === 'text' && message.text ? message.text.body.toLowerCase().trim() : '';
     
-    // Handle "share your thoughts" trigger to start feedback flow
-    if (message.type === 'text' && message.text) {
-      const messageText = message.text.body.toLowerCase().trim();
-      
-      if (messageText === 'share your thoughts') {
-        console.log(`💭 Starting feedback collection for ${userPhone}`);
-        const session = await conversationManager.createSession(userPhone);
-        const response = getTemplate('greeting');
-        await sendTextMessage(userPhone, response);
-        return;
-      }
+    // ONLY activate bot on "share your thoughts" trigger
+    if (messageText === 'share your thoughts') {
+      console.log(`💭 Starting feedback collection for ${userPhone}`);
+      const session = await conversationManager.createSession(userPhone);
+      const response = getTemplate('greeting');
+      await sendTextMessage(userPhone, response);
+      return;
     }
-
-    // Get current session
-    const session = await conversationManager.getSession(userPhone);
+    
+    // Check if user has an ACTIVE session
+    const existingSession = await conversationManager.getSessionIfExists(userPhone);
+    
+    // If no active session, IGNORE the message (don't respond)
+    if (!existingSession) {
+      console.log(`🚫 Ignoring message from ${userPhone} - no active session`);
+      return; // Exit without processing
+    }
+    
+    // Continue with existing flow for active sessions
+    const session = existingSession;
     
     // Process message based on current conversation step
     switch (session.step) {
